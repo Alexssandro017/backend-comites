@@ -55,4 +55,8 @@ public class EventService {
     public void deleteEvent(Long id) {
         eventRepository.deleteById(id);
     }
+
+    public List<Event> findEventsByMemberId(Long userId) {
+        return eventRepository.findByMemberId(userId);
+    }
 }

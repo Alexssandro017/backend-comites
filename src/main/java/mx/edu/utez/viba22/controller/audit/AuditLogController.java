@@ -19,11 +19,6 @@ public class AuditLogController {
     @Autowired
     private AuditLogRepository auditLogRepository;
 
-    /**
-     * GET /api/audit/
-     * Devuelve todos los registros de auditoría
-     * Solo usuarios con rol ADMIN pueden acceder
-     */
     @GetMapping("/")
     @PreAuthorize("hasAuthority('ADMIN_ROLE')")
     public ResponseEntity<CustomResponse<List<AuditLog>>> getAllAuditLogs() {

@@ -1,6 +1,8 @@
 package mx.edu.utez.viba22.controller.event;
 
 import mx.edu.utez.viba22.model.event.Event;
+import mx.edu.utez.viba22.model.user.User;
+import mx.edu.utez.viba22.model.user.UserRepository;
 import mx.edu.utez.viba22.service.event.EventService;
 import mx.edu.utez.viba22.utils.CustomResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -21,6 +24,9 @@ public class EventController {
 
     @Autowired
     private EventService eventService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @PostMapping("/")
     @PreAuthorize("hasAuthority('ADMIN_GROUP_ROLE')")
@@ -108,6 +114,30 @@ public class EventController {
             return ResponseEntity.status(HttpStatus.OK).body(new CustomResponse<>(null, "Event deleted successfully", false, 200));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new CustomResponse<>(null, "Error deleting event", true, 500));
+        }
+    }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasAuthority('MEMBER_ROLE')")
+    public ResponseEntity<CustomResponse<List<Event>>> findMyEvents(Authentication auth) {
+        try {
+            // 1) Tomamos el username (no-email si tu JWT lo usa así)
+            String username = auth.getName();
+
+            // 2) Buscamos al User para obtener el idUser
+            User me = userRepository.findByEmail(username)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
+
+            // 3) Recuperamos solo los eventos de los grupos donde es miembro
+            List<Event> myEvents = eventService.findEventsByMemberId(me.getIdUser());
+
+            return ResponseEntity.ok(new CustomResponse<>(myEvents,
+                    "Eventos del miembro recuperados exitosamente",
+                    false, 200));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new CustomResponse<>(null, "Error al recuperar tus eventos", true, 500));
         }
     }
 }
