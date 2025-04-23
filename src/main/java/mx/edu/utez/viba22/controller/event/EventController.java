@@ -1,8 +1,11 @@
 package mx.edu.utez.viba22.controller.event;
 
+import mx.edu.utez.viba22.model.attendance.Attendance;
 import mx.edu.utez.viba22.model.event.Event;
 import mx.edu.utez.viba22.model.user.User;
 import mx.edu.utez.viba22.model.user.UserRepository;
+import mx.edu.utez.viba22.service.attendance.AttendanceService;
+import mx.edu.utez.viba22.service.auth.AuthService;
 import mx.edu.utez.viba22.service.event.EventService;
 import mx.edu.utez.viba22.utils.CustomResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +30,9 @@ public class EventController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private AttendanceService attendanceService;
 
     @PostMapping("/")
     @PreAuthorize("hasAuthority('ADMIN_GROUP_ROLE')")
@@ -138,6 +144,24 @@ public class EventController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new CustomResponse<>(null, "Error al recuperar tus eventos", true, 500));
+        }
+    }
+
+    @PostMapping("/{id}/attendance")
+    @PreAuthorize("hasAuthority('MEMBER_ROLE')")
+    public ResponseEntity<CustomResponse<Attendance>> confirmAttendance(
+            @PathVariable Long id,
+            Authentication auth) {
+        try {
+            Attendance a = attendanceService.confirmAttendance(id, auth.getName());
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(new CustomResponse<>(a, "Asistencia confirmada", false, 201));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new CustomResponse<>(null, e.getMessage(), true, 400));
         }
     }
 }
